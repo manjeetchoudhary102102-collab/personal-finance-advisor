@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Admin - User Management</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, Arial, sans-serif;
+            background: #f4f7fb;
+            color: #172033;
+        }
+
+        .topbar {
+            height: 70px;
+            background: #ffffff;
+            border-bottom: 1px solid #e5eaf2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+        }
+
+        .brand {
+            font-size: 19px;
+            font-weight: 800;
+        }
+
+        .top-links {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .top-links a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .container {
+            width: min(1180px, calc(100% - 32px));
+            margin: 30px auto;
+        }
+
+        h1 {
+            margin: 0 0 7px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #718096;
+            margin: 0 0 25px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 22px;
+            align-items: start;
+        }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid #e5eaf2;
+            border-radius: 16px;
+            padding: 22px;
+            box-shadow: 0 8px 25px rgba(23, 32, 51, 0.05);
+        }
+
+        .card h2 {
+            margin: 0 0 18px;
+            font-size: 18px;
+        }
+
+        .field {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        input,
+        select {
+            width: 100%;
+            height: 43px;
+            border: 1px solid #d8dee9;
+            border-radius: 9px;
+            padding: 0 12px;
+            background: #fff;
+            font-size: 14px;
+        }
+
+        button {
+            border: 0;
+            border-radius: 8px;
+            padding: 10px 14px;
+            background: #2563eb;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .danger {
+            background: #dc2626;
+        }
+
+        .danger:hover {
+            background: #b91c1c;
+        }
+
+        .secondary {
+            background: #64748b;
+        }
+
+        .secondary:hover {
+            background: #475569;
+        }
+
+        .error {
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: #fff0f0;
+            color: #b42318;
+            border: 1px solid #ffd0d0;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 13px 10px;
+            border-bottom: 1px solid #edf0f5;
+            white-space: nowrap;
+            font-size: 13px;
+        }
+
+        th {
+            color: #718096;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .disabled {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .role {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .actions {
+            display: flex;
+            gap: 7px;
+            align-items: center;
+        }
+
+        .actions form {
+            margin: 0;
+        }
+
+        .actions button {
+            padding: 7px 10px;
+            font-size: 11px;
+        }
+
+        .current {
+            color: #718096;
+            font-size: 11px;
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .topbar {
+                padding: 0 16px;
+            }
+
+            .container {
+                width: min(100% - 20px, 1180px);
+                margin: 20px auto;
+            }
+
+            .top-links a:first-child {
+                display: none;
+            }
+
+            .card {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="topbar">
+
+    <div class="brand">
+        Personal Finance Advisor
+    </div>
+
+    <div class="top-links">
+        <a href="{{ url_for('index') }}">
+            Dashboard
+        </a>
+
+        <a href="{{ url_for('logout') }}">
+            Logout
+        </a>
+    </div>
+
+</header>
+
+<main class="container">
+
+    <h1>User Management</h1>
+
+    <p class="subtitle">
+        Create and manage accounts for your finance application.
+    </p>
+
+    {% if error %}
+    <div class="error">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="grid">
+
+        <!-- CREATE USER -->
+
+        <section class="card">
+
+            <h2>Create User</h2>
+
+            <form
+                method="POST"
+                action="{{ url_for('admin_create_user') }}"
+            >
+
+                <div class="field">
+                    <label for="name">Name</label>
+
+                    <input
+                        id="name"
+                        name="name"
+                        type="text"
+                        required
+                    >
+                </div>
+
+                <div class="field">
+                    <label for="email">Email</label>
+
+                    <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        required
+                    >
+                </div>
+
+                <div class="field">
+                    <label for="password">Temporary Password</label>
+
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        minlength="8"
+                        required
+                    >
+                </div>
+
+                <div class="field">
+                    <label for="role">Role</label>
+
+                    <select id="role" name="role">
+                        <option value="user">
+                            Regular User
+                        </option>
+
+                        <option value="admin">
+                            Administrator
+                        </option>
+                    </select>
+                </div>
+
+                <button type="submit">
+                    Create User
+                </button>
+
+            </form>
+
+        </section>
+
+
+        <!-- USERS -->
+
+        <section class="card">
+
+            <h2>Users</h2>
+
+            <div class="table-wrap">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                    {% for user in users %}
+
+                        <tr>
+
+                            <td>
+                                <strong>
+                                    {{ user.name }}
+                                </strong>
+
+                                {% if user.id == current_user.id %}
+                                <div class="current">
+                                    You
+                                </div>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {{ user.email }}
+                            </td>
+
+                            <td>
+
+                                <span class="role">
+                                    {{ user.role }}
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                {% if user.is_active %}
+
+                                    <span class="status active">
+                                        Active
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="status disabled">
+                                        Disabled
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ user.created_at.strftime('%Y-%m-%d') }}
+                            </td>
+
+                            <td>
+
+                                {% if user.id != current_user.id %}
+
+                                <div class="actions">
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('admin_toggle_user', user_id=user.id) }}"
+                                    >
+                                        <button
+                                            type="submit"
+                                            class="secondary"
+                                        >
+                                            {% if user.is_active %}
+                                                Disable
+                                            {% else %}
+                                                Enable
+                                            {% endif %}
+                                        </button>
+                                    </form>
+
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('admin_change_role', user_id=user.id) }}"
+                                    >
+
+                                        <input
+                                            type="hidden"
+                                            name="role"
+                                            value="{% if user.role == 'admin' %}user{% else %}admin{% endif %}"
+                                        >
+
+                                        <button type="submit">
+                                            {% if user.role == 'admin' %}
+                                                Make User
+                                            {% else %}
+                                                Make Admin
+                                            {% endif %}
+                                        </button>
+
+                                    </form>
+
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('admin_delete_user', user_id=user.id) }}"
+                                        onsubmit="return confirm('Delete this user and all of their financial data?');"
+                                    >
+
+                                        <button
+                                            type="submit"
+                                            class="danger"
+                                        >
+                                            Delete
+                                        </button>
+
+                                    </form>
+
+                                </div>
+
+                                {% else %}
+
+                                <span class="current">
+                                    Current administrator
+                                </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                    {% else %}
+
+                        <tr>
+                            <td colspan="6">
+                                No users found.
+                            </td>
+                        </tr>
+
+                    {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</main>
+
+</body>
+</html>

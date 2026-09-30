@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Personal Finance Advisor Bot - simple income, expense, budget and financial guidance dashboard.">
+  <title>Personal Finance Advisor Bot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-icon">₹</div>
+        <div><strong>Finance</strong><span>Advisor Bot</span></div>
+      </div>
+      <nav>
+        <button class="nav-item active" data-section="dashboard"><span>⌂</span>Dashboard</button>
+        <button class="nav-item" data-section="expenses"><span>↘</span>Expenses</button>
+        <button class="nav-item" data-section="budget"><span>▣</span>Budget Advisor</button>
+        <button class="nav-item" data-section="ai-advisor"><span>✦</span>AI Financial Advisor</button>
+        <button class="nav-item" data-section="summary"><span>◴</span>Monthly Summary</button>
+      </nav>
+      <div class="sidebar-note">
+        <span class="mini-dot"></span>
+        <div><strong>Simple & private</strong><small>Your data is stored in this app's database.</small></div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Open navigation">☰</button>
+        <div>
+          <p class="eyebrow">PERSONAL FINANCE</p>
+          <h1 id="pageTitle">Dashboard</h1>
+        </div>
+        <div class="top-actions">
+  <label class="month-picker">
+    Month
+    <input type="month" id="monthInput" value="{{ current_month }}">
+  </label>
+
+  <button class="refresh-btn" id="refreshBtn" title="Refresh data">↻</button>
+
+  <div class="user-menu">
+    <div class="user-info">
+      <div class="user-avatar">
+        {{ current_user.name[:1]|upper }}
+      </div>
+      <div class="user-details">
+        <strong>{{ current_user.name }}</strong>
+        <span>{{ current_user.email }}</span>
+      </div>
+    </div>
+
+    <div class="user-actions">
+      {% if current_user.role == 'admin' %}
+        <a href="{{ url_for('admin_users') }}" class="account-btn admin-btn">
+          Admin
+        </a>
+      {% endif %}
+
+      <a href="{{ url_for('logout') }}" class="account-btn logout-btn">
+        Logout
+      </a>
+    </div>
+  </div>
+</div>
+      </header>
+
+      <div id="toast" class="toast" role="status"></div>
+
+      <section class="content-section active" id="dashboard-section">
+        <div class="hero-row">
+          <div>
+            <h2>Good money habits start with visibility.</h2>
+            <p>Track your month, understand your spending, and use simple guidance to plan ahead.</p>
+          </div>
+          <button class="primary-btn" data-section-link="expenses">+ Add Expense</button>
+        </div>
+        <div class="cards-grid">
+          <article class="metric-card"><div class="metric-icon income">↗</div><div><span>Monthly Income</span><strong id="incomeValue">₹0</strong></div></article>
+          <article class="metric-card"><div class="metric-icon expense">↘</div><div><span>Total Expenses</span><strong id="expenseValue">₹0</strong></div></article>
+          <article class="metric-card"><div class="metric-icon savings">◈</div><div><span>Current Savings</span><strong id="savingsValue">₹0</strong></div></article>
+          <article class="metric-card"><div class="metric-icon rate">%</div><div><span>Savings Rate</span><strong id="savingsRate">0%</strong></div></article>
+        </div>
+        <div class="dashboard-grid">
+          <article class="panel chart-panel"><div class="panel-heading"><div><h3>Expense Breakdown</h3><p>Where your money is going this month</p></div></div><div class="chart-wrap"><canvas id="expenseChart"></canvas><div id="chartEmpty" class="empty-chart">No expenses recorded yet.</div></div></article>
+          <article class="panel"><div class="panel-heading"><div><h3>Income</h3><p>Set or update your monthly income</p></div></div>
+            <form id="incomeForm" class="compact-form"><div class="input-group"><label for="incomeAmount">Monthly income (₹)</label><input id="incomeAmount" name="amount" type="number" min="0.01" step="0.01" placeholder="20000" required></div><button class="primary-btn" type="submit">Save Income</button></form>
+            <div class="balance-box"><span>Remaining balance</span><strong id="balanceValue">₹0</strong></div>
+          </article>
+        </div>
+        <article class="panel"><div class="panel-heading"><div><h3>Recent Expenses</h3><p>Your latest transactions for the selected month</p></div><button class="text-btn" data-section-link="expenses">View all →</button></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th></tr></thead><tbody id="recentExpenses"></tbody></table><div id="recentEmpty" class="empty-state">No expenses for this month.</div></div></article>
+      </section>
+
+      <section class="content-section" id="expenses-section">
+        <div class="section-intro"><div><p class="eyebrow">TRANSACTIONS</p><h2>Expense Tracking</h2><p>Add expenses and filter your monthly history.</p></div></div>
+        <div class="dashboard-grid expense-layout">
+          <article class="panel"><div class="panel-heading"><div><h3>Add Expense</h3><p>Record a new transaction</p></div></div>
+            <form id="expenseForm" class="form-grid">
+              <div class="input-group"><label for="expenseAmount">Amount (₹)</label><input id="expenseAmount" name="amount" type="number" min="0.01" step="0.01" placeholder="350" required></div>
+              <div class="input-group"><label for="expenseCategory">Category</label><select id="expenseCategory" name="category" required>{% for category in categories %}<option value="{{ category }}">{{ category }}</option>{% endfor %}</select></div>
+              <div class="input-group full"><label for="expenseDescription">Description</label><input id="expenseDescription" name="description" maxlength="255" placeholder="Groceries, bus ticket, course fee..." required></div>
+              <div class="input-group"><label for="expenseDate">Date</label><input id="expenseDate" name="date" type="date" required></div>
+              <div class="form-action"><button class="primary-btn" type="submit">Add Expense</button></div>
+            </form>
+          </article>
+          <article class="panel mini-summary"><div class="panel-heading"><div><h3>Month at a glance</h3><p>Selected month</p></div></div><div class="mini-stat"><span>Transactions</span><strong id="transactionCount">0</strong></div><div class="mini-stat"><span>Highest category</span><strong id="highestCategory">—</strong></div><div class="mini-stat"><span>Total spent</span><strong id="expenseMiniTotal">₹0</strong></div></article>
+        </div>
+        <article class="panel"><div class="panel-heading filter-heading"><div><h3>Expense History</h3><p>Delete an entry if you added it by mistake.</p></div><div class="filters"><select id="categoryFilter"><option value="">All categories</option>{% for category in categories %}<option value="{{ category }}">{{ category }}</option>{% endfor %}</select><input type="date" id="startFilter" title="Start date"><input type="date" id="endFilter" title="End date"><button class="secondary-btn" id="clearFilters">Clear</button></div></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th></th></tr></thead><tbody id="expensesTable"></tbody></table><div id="expensesEmpty" class="empty-state">No matching expenses.</div></div></article>
+      </section>
+
+      <section class="content-section" id="budget-section">
+        <div class="section-intro"><div><p class="eyebrow">PLANNING</p><h2>Budget Advisor</h2><p>Simple planning percentages are applied to your monthly income.</p></div></div>
+        <div class="notice"><span>ⓘ</span><div><strong>How this works</strong><p>These are educational starting points, not professional financial advice. Your actual needs may differ, especially for rent, healthcare, debt, or irregular income.</p></div></div>
+        <article class="panel"><div class="panel-heading"><div><h3>Recommended vs. Actual</h3><p>Green means within the suggested limit; amber means spending is above it.</p></div></div><div class="table-wrap"><table class="budget-table"><thead><tr><th>Category</th><th>Suggested %</th><th>Recommended</th><th>Current spending</th><th>Difference</th><th>Status</th></tr></thead><tbody id="budgetTable"></tbody></table></div></article>
+      </section>
+
+      <section class="content-section" id="ai-advisor-section">
+        <div class="section-intro"><div><p class="eyebrow">GUIDANCE</p><h2>AI Financial Advisor</h2><p>Get understandable recommendations based on your recorded numbers.</p></div><button class="primary-btn" id="generateAdvice">Generate Advice</button></div>
+        <div class="advisor-banner"><div class="sparkle">✦</div><div><strong id="advisorMode">Rule-based advisor</strong><p>If an API key is configured on the server, the app can use an AI provider. Otherwise this reliable rule-based fallback is used.</p></div></div>
+        <article class="panel advice-panel"><div id="adviceList" class="advice-list"><div class="loading-state">Click “Generate Advice” to analyze this month.</div></div></article>
+      </section>
+
+      <section class="content-section" id="summary-section">
+        <div class="section-intro"><div><p class="eyebrow">REPORT</p><h2>Monthly Summary</h2><p>A concise view of your financial position for the selected month.</p></div></div>
+        <div class="summary-hero panel"><div><span>Net savings</span><strong id="summarySavings">₹0</strong><small id="summaryRate">0% of income</small></div><div class="summary-ring" id="summaryRing"><span id="summaryRingText">0%</span></div></div>
+        <div class="cards-grid summary-cards"><article class="metric-card"><div><span>Income</span><strong id="summaryIncome">₹0</strong></div></article><article class="metric-card"><div><span>Expenses</span><strong id="summaryExpenses">₹0</strong></div></article><article class="metric-card"><div><span>Highest category</span><strong id="summaryHighest">—</strong></div></article></div>
+        <div class="dashboard-grid"><article class="panel"><div class="panel-heading"><div><h3>Areas of Overspending</h3></div></div><div id="overspendingList" class="simple-list"></div></article><article class="panel"><div class="panel-heading"><div><h3>Recommendations</h3></div></div><div id="recommendationsList" class="simple-list"></div></article></div>
+      </section>
+
+      <footer>Personal Finance Advisor Bot · Educational course project · Not professional financial advice.</footer>
+    </main>
+  </div>
+  <script>window.APP_CATEGORIES = {{ categories|tojson }};</script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
